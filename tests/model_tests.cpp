@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(LeNetModelTest)
   // Create an optimizer object for tests.
   ens::SGD<ens::AdamUpdate> optimizer(1e-4, 16, 1000,
       1e-8, true, ens::AdamUpdate(1e-8, 0.9, 0.999));
-  mlpack::ann::FFN<> model = lenetModel.GetModel();
+  FFN<> model = lenetModel.GetModel();
   CheckFFNWeights<ens::SGD<ens::AdamUpdate>>(model, "mnist", 1e-2,
       true, optimizer);
 }

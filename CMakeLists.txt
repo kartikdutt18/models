@@ -113,17 +113,6 @@ endif ()
 
 find_package(MLPACK REQUIRED)
 
-find_package(CURL REQUIRED)
-if (NOT CURL_FOUND)
-  message("CURL NOT FOUND.")
-endif()
-
-# Make building tests optional
-find_package(CryptoPP REQUIRED)
-if (NOT CryptoPP_FOUND)
-  message("CryptoPP NOT FOUND.")
-endif()
-
 find_package(Ensmallen 1.10.0)
 if (NOT ENSMALLEN_FOUND)
   if (DOWNLOAD_ENSMALLEN)
@@ -173,6 +162,7 @@ set(Boost_ADDITIONAL_VERSIONS
   "1.49.0" "1.50.0" "1.51.0" "1.52.0" "1.53.0" "1.54.0" "1.55.0")
 find_package(Boost 1.49
     COMPONENTS
+      system
       program_options
       unit_test_framework
       serialization
