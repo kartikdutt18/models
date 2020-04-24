@@ -209,8 +209,6 @@ set(MODELS_INCLUDE_DIRS ${MLPACK_INCLUDE_DIR}
 set(MODELS_LIBRARIES ${MLPACK_LIBRARY}
                      ${ARMADILLO_LIBRARIES}
                      ${Boost_LIBRARIES}
-                     ${CURL_LIBRARIES}
-                     ${CRYPTOPP_LIBRARIES}
 )
 
 include_directories(${MODELS_INCLUDE_DIRS})

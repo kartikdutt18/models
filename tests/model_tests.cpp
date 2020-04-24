@@ -11,11 +11,17 @@
  */
 #define BOOST_TEST_DYN_LINK
 #include <utils/utils.hpp>
+#include <mlpack/prereqs.hpp>
 #include <dataloader/datasets.hpp>
 #include <dataloader/dataloader.hpp>
 #include <models/lenet/lenet.hpp>
+#include <ensmallen.hpp>
 #include <boost/test/unit_test.hpp>
+
+// Use namespaces for convenience.
 using namespace boost::unit_test;
+using namespace mlpack;
+using namespace mlpack::ann;
 
 BOOST_AUTO_TEST_SUITE(ModelTest);
 
@@ -30,7 +36,7 @@ template<
 void CheckFFNWeights(mlpack::ann::FFN<OutputLayerType,
     InitializationRuleType>& model, const std::string& datasetName,
     const double threshold, const bool takeMean,
-    const OptimizerType& optimizer)
+    OptimizerType& optimizer)
 {
   DataLoader<InputType, OutputType> dataloader(datasetName, true);
   // Train the model. Note: Callbacks such as progress bar and loss aren't
@@ -73,13 +79,13 @@ template<
 >
 void CheckSequentialModel(mlpack::ann::Sequential<>* layer,
     const std::string& datasetName, const double threshold,
-    const bool takeMean, const OptimizerType& optimizer)
+    const bool takeMean, OptimizerType& optimizer)
 {
   // We can run two tests for sequential layer.
   // 1. Can it be attached to other models.
   // 2. Used as an FFN for training / inference.
-  mlpack::ann::FFN<OutputLayerType, InitializationRuleType> model;
-  model.Add<mlpack::ann::IdentityLayer<>>();
+  FFN<OutputLayerType, InitializationRuleType> model;
+  model.Add<IdentityLayer<>>();
   model.Add(layer);
   CheckFFNWeights<OptimizerType, OutputLayerType, InitializationRuleType,
       MetricType, InputType, OutputType>(model, datasetName, threshold,
@@ -92,9 +98,10 @@ void CheckSequentialModel(mlpack::ann::Sequential<>* layer,
  */
 BOOST_AUTO_TEST_CASE(LeNetModelTest)
 {
-  mlpack::ann::LeNet<> lenetModel(1, 28, 28, 10, "mnist");
+  LeNet<> lenetModel(1, 28, 28, 10, "mnist");
   // Create an optimizer object for tests.
-  ens::SGD<ens::AdamUpdate> optimizer(1e-4, 16, 1000);
+  ens::SGD<ens::AdamUpdate> optimizer(1e-4, 16, 1000,
+      1e-8, true, ens::AdamUpdate(1e-8, 0.9, 0.999));
   mlpack::ann::FFN<> model = lenetModel.GetModel();
   CheckFFNWeights<ens::SGD<ens::AdamUpdate>>(model, "mnist", 1e-2,
       true, optimizer);
