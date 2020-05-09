@@ -193,13 +193,11 @@ link_directories(${Boost_LIBRARY_DIRS})
 set(MODELS_INCLUDE_DIRS ${MLPACK_INCLUDE_DIR}
                         ${ENSMALLEN_INCLUDE_DIR}
                         ${ARMADILLO_INCLUDE_DIR}
-                        ${Boost_INCLUDE_DIRS}
-)
+                        ${Boost_INCLUDE_DIRS})
 
 set(MODELS_LIBRARIES ${MLPACK_LIBRARY}
                      ${ARMADILLO_LIBRARIES}
-                     ${Boost_LIBRARIES}
-)
+                     ${Boost_LIBRARIES})
 
 include_directories(${MODELS_INCLUDE_DIRS})
 
@@ -214,9 +212,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
 
 # Recurse into each model.
 set(DIRS
-  # Model directories.
-  #vae/vae_mnist
-  #vae/vae_cnn_mnist
   utils/
   dataloader/
   models/

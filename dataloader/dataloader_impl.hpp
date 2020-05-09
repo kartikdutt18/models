@@ -56,18 +56,14 @@ template<
               datasetMap[dataset].endTrainingPredictionFeatures,
               datasetMap[dataset].endTrainingPredictionFeatures);
 
-      if (dataset == "mnist")
-      {
-        // Pre-Processing for mnist dataset.
-        trainY = trainY + 1;
-        validY = validY + 1;
-      }
-
       LoadCSV(datasetMap[dataset].testPath, false, false, useScaler,
               datasetMap[dataset].dropHeader,
               datasetMap[dataset].startTestingInputFeatures,
               datasetMap[dataset].endTestingInputFeatures);
     }
+
+    // Preprocess the dataset.
+    datasetMap[dataset].PreProcess(trainX, trainY, validX, validY, testX);
   }
   else
   {

@@ -24,6 +24,25 @@
 /**
  * Dataloader class to load popular datasets.
  *
+ * @code
+ * // Create a dataloader for any popular dataset.
+ * // Set parameters for dataset.
+ * const string datasetName = "mnist";
+ * bool shuffleData = true;
+ * double ratioForTrainTestSplit = 0.75;
+ * 
+ * // Create the DataLoader object.
+ * DataLoader<> dataloader(datasetName, shuffleData,
+ *    ratioForTrainTestSplit);
+ *
+ * // Use the dataloader for training.
+ * model.Train(dataloader.TrainX(), dataloader.TrainY());
+ *
+ * // Use the dataloader for prediction.
+ * arma::mat predictons; // Matrix to hold predicions.
+ * model.Predict(dataloader.TestX(), predictions);
+ * @endcode
+ * 
  * @tparam DatasetX Datatype for loading input features.
  * @tparam DatasetY Datatype for prediction features.
  * @tparam ScalerType mlpack's Scaler Object for scaling features.
@@ -172,7 +191,7 @@ class DataLoader
    */
   void InitializeDatasets()
   {
-    datasetMap.insert({"mnist", Datasets::MNIST()});
+    datasetMap.insert({"mnist", Datasets<DatasetX, DatasetY>::MNIST()});
   }
 
   // Utility Function to wrap indices.
@@ -185,7 +204,8 @@ class DataLoader
   }
 
   //! Locally stored mappings for some well known datasets.
-  std::unordered_map<std::string, DatasetDetails> datasetMap;
+  std::unordered_map<std::string,
+      DatasetDetails<DatasetX, DatasetY>> datasetMap;
 
   //! Locally stored input for training.
   DatasetX trainX;

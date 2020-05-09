@@ -1,0 +1,47 @@
+steps:
+
+# Checkout repository.
+- checkout: self
+  clean: true
+  fetchDepth: 1
+
+# Install Build Dependencies.
+# Install mlpack from master to get new functionalities instantly.
+- script: |
+    set -e
+    sudo xcode-select --switch /Applications/Xcode_10.1.app/Contents/Developer
+    unset BOOST_ROOT
+    pip install cython numpy pandas zipp configparser
+    brew install openblas armadillo boost
+    git clone --depth 1 https://github.com/mlpack/jenkins-conf.git conf
+    git clone --depth 1 https://github.com/mlpack/mlpack.git
+  displayName: 'Install Build Dependencies'
+
+# Configure CMake Args for mlpack.
+- script: |
+    unset BOOST_ROOT
+    cd mlpack && mkdir build && cd build && cmake $(CMakeArgs-mlpack) ..
+  displayName: 'CMake for mlpack'
+
+# Build mlpack
+- script: cd mlpack/build && make -j2
+  displayName: 'Build mlpack'
+
+# Configure CMake Args for models.
+- script: |
+    mkdir build && cd build && cmake $(CMakeArgs-models) ..
+  displayName: 'CMake for models'
+
+# Build mlpack
+- script: cd mlpack/build && make -j2
+  displayName: 'Build models'
+
+# Figure out CTest doesn't work.
+- script: cd build && ./bin/models_test
+  displayName: 'Run Tests using Executables'
+
+# Publish tests once CTest works.
+
+
+
+
