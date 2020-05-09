@@ -27,7 +27,7 @@ template<
 >
 class PreProcessor
 {
-  public:
+ public:
   static void MNIST(DatasetX& /*trainX*/, DatasetY& trainY,
       DatasetY& /*validX*/, DatasetY& validY, DatasetX& /*testX*/)
   {
