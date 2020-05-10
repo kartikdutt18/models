@@ -25,7 +25,7 @@ steps:
 
 # Install mlpack
 - script: cd mlpack/build && make install -j2
-  displayName: 'Build mlpack'
+  displayName: 'Install mlpack'
 
 # Configure CMake Args for models.
 - script: |
@@ -33,7 +33,7 @@ steps:
   displayName: 'CMake for models'
 
 # Build mlpack
-- script: cd mlpack/build && make -j2
+- script: cd build && make -j2
   displayName: 'Build models'
 
 # Figure out CTest doesn't work.
