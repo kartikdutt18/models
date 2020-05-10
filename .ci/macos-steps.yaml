@@ -23,8 +23,8 @@ steps:
     cd mlpack && mkdir build && cd build && cmake $(CMakeArgs-mlpack) ..
   displayName: 'CMake for mlpack'
 
-# Build mlpack
-- script: cd mlpack/build && make -j2
+# Install mlpack
+- script: cd mlpack/build && make install -j2
   displayName: 'Build mlpack'
 
 # Configure CMake Args for models.
