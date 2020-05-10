@@ -28,7 +28,6 @@
 #define MODELS_LENET_HPP
 
 #include <mlpack/core.hpp>
-#include <mlpack/prereqs.hpp>
 #include <mlpack/methods/ann/layer/layer.hpp>
 #include <mlpack/methods/ann/ffn.hpp>
 #include <mlpack/methods/ann/layer/layer_types.hpp>
