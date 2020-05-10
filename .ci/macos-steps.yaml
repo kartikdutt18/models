@@ -37,8 +37,8 @@ steps:
   displayName: 'Build models'
 
 # Figure out CTest doesn't work.
-- script: cd build && ./bin/models_test
-  displayName: 'Run Tests using Executables'
+#- script: cd build && ./bin/models_test
+#  displayName: 'Run Tests using Executables'
 
 # Publish tests once CTest works.
 
