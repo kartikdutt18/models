@@ -163,9 +163,10 @@ set(Boost_ADDITIONAL_VERSIONS
 find_package(Boost 1.49
     COMPONENTS
       system
-      program_options
-      unit_test_framework
       serialization
+      program_options
+      filesystem
+      unit_test_framework
     REQUIRED
 )
 

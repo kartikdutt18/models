@@ -7,7 +7,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../")
 add_executable(models_test
                dataloader_tests.cpp
                utils_tests.cpp
-               #model_tests.cpp
+               model_tests.cpp
 )
 
 # Link dependencies of test executable.
@@ -18,6 +18,7 @@ target_link_libraries(models_test
   ${COMPILER_SUPPORT_LIBRARIES}
   ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
   ${Boost_SYSTEM_LIBRARY}
+  ${Boost_SERIALIZATION_LIBRARY}
 )
 
 # Add tests to the testing framework
