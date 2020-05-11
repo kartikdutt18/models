@@ -56,14 +56,15 @@ class Utils
                           const std::string name = "",
                           const bool silent = true,
                           const std::string serverName =
-                              "https://www.mlpack.org/datasets/")
+                              "www.mlpack.org")
   {
     // IO functionality by boost core.
     boost::asio::io_service ioService;
     // Use TCP protocol by boost asio to make a connection to desired server.
     boost::asio::ip::tcp::resolver resolver(ioService);
     // Resolver will converts the the query object into list of end-points.
-    boost::asio::ip::tcp::resolver::query query(serverName, "http");
+    boost::asio::ip::tcp::resolver::query query(serverName, "80",
+        boost::asio::ip::resolver_query_base::numeric_service);
     // The list of endpoints is returned using an iterator.
     boost::asio::ip::tcp::resolver::iterator endPoint = resolver.resolve(query);
     boost::asio::ip::tcp::resolver::iterator end;
@@ -75,12 +76,15 @@ class Utils
     while (error && endPoint != end)
     {
       socket.close();
+      
+      boost::asio::ip::address addr = endPoint->endpoint().address();
       socket.connect(*endPoint++, error);
+      //std::cout << addr.to_string() << std::endl;
     }
 
     boost::asio::streambuf request;
     std::ostream requestStream(&request);
-    requestStream << "GET " << url << " HTTP/1.0\r\n";
+    requestStream << "GET " << url << " HTTP/2.0\r\n";
     requestStream << "Host: " << serverName << "\r\n";
     requestStream << "Accept: */*\r\n";
     requestStream << "Connection: close\r\n\r\n";

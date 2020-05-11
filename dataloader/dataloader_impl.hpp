@@ -67,10 +67,10 @@ template<
   }
   else
   {
-    mlpack::Log::Fatal << "Unknown Dataset " << dataset <<
-        ". For other datasets try loading data using" <<
-        "generic dataloader functions such as LoadCSV." <<
-        "Refer documentation for more info." << std::endl;
+    mlpack::Log::Fatal << "Unknown Dataset. " << dataset <<
+        " For other datasets try loading data using" <<
+        " generic dataloader functions such as LoadCSV." <<
+        " Refer documentation for more info." << std::endl;
   }
 }
 

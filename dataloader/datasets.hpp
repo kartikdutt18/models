@@ -107,8 +107,8 @@ class Datasets
   {
     DatasetDetails<DatasetX, DatasetY> mnistDetails(
         "mnist",
-        "/mnist-dataset/mnist_train.csv",
-        "/mnist-dataset/mnist_test.csv",
+        "/datasets/mnist_train.csv",
+        "/datasets/mnist_test.csv",
         "772495e3",
         "8bcdb7e1",
         true,

@@ -21,13 +21,13 @@ BOOST_AUTO_TEST_SUITE(DataLoadersTest);
 /**
  * Simple test for Dataloader.
  */
-BOOST_AUTO_TEST_CASE(DataLoaderTest)
+BOOST_AUTO_TEST_CASE(CSVDataLoaderTest)
 {
   // Check that dataloader loads only known datasets.
   BOOST_REQUIRE_THROW(DataLoader<>("no-dataset", true), std::runtime_error);
 
   // Check Load CSV Function for Dataloader.
-  Utils::DownloadFile("iris.csv", "./../data/iris.csv");
+  Utils::DownloadFile("/datasets/iris.csv", "./../data/iris.csv");
   DataLoader<> irisDataloader;
   irisDataloader.LoadCSV("./../data/iris.csv", true, true, 0.5, false, false,
       0, -1, 1, -1);
