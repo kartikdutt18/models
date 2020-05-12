@@ -36,12 +36,23 @@ steps:
 - script: cd build && make -j2
   displayName: 'Build models'
 
-# Figure out CTest doesn't work.
-#- script: cd build && ./bin/models_test
-#  displayName: 'Run Tests using Executables'
+# Run CTests.
+- script: cd build/tests/ && CTEST_OUTPUT_ON_FAILURE=1 ctest -R UtilsTest 
+  displayName: 'Run CTests'
 
-# Publish tests once CTest works.
+# Publish test results to Azure Pipelines
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: cTest
+    testResultsFiles: build/tests/Testing/*/Test.xml
+    failTaskOnFailedTests: true
+  displayName: 'Publish tests'
 
-
+# Publish build artifacts to Azure Pipelines
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: 'build/tests/Testing/'
+    artifactName: 'Tests'
+  displayName: 'Publish artifacts test results'
 
 

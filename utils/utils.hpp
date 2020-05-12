@@ -79,12 +79,11 @@ class Utils
       
       boost::asio::ip::address addr = endPoint->endpoint().address();
       socket.connect(*endPoint++, error);
-      //std::cout << addr.to_string() << std::endl;
     }
 
     boost::asio::streambuf request;
     std::ostream requestStream(&request);
-    requestStream << "GET " << url << " HTTP/2.0\r\n";
+    requestStream << "GET " << url << " HTTP/1.1\r\n";
     requestStream << "Host: " << serverName << "\r\n";
     requestStream << "Accept: */*\r\n";
     requestStream << "Connection: close\r\n\r\n";
@@ -125,11 +124,11 @@ class Utils
     }
 
     // Read the response and write to desired file.
-    do
+    while(boost::asio::read(socket, response,
+        boost::asio::transfer_at_least(1), error))
     {
       outputFile << &response;
-    } while (boost::asio::read(socket, response,
-        boost::asio::transfer_at_least(1), error));
+    }
 
     if (error != boost::asio::error::eof)
     {
@@ -162,14 +161,13 @@ class Utils
     boost::crc_32_type hash;
     std::ifstream inputFile(path.c_str(), std::ios::in | std::ios::binary);
     // Read File in chunks to prevent reading whole file into memory.
-    std::vector<char> buffer(1024);
+    std::vector<char> buffer(2048);
     while (inputFile.read(&buffer[0], buffer.size()))
     {
       hash.process_bytes(&buffer[0], inputFile.gcount());
     }
     std::stringstream hashString;
     hashString << std::hex << hash.checksum();
-    std::cout << hashString.str() << std::endl;
     return hashString.str();
   }
 
@@ -180,7 +178,8 @@ class Utils
    */
   static void RemoveFile(std::string path)
   {
-    if (std::remove(path.c_str()) != 0)
+    std::remove(path.c_str());
+    if (PathExists(path) != 0)
     {
       mlpack::Log::Warn << "Error Deleting File." << std::endl;
     }
