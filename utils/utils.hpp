@@ -176,13 +176,15 @@ class Utils
    *
    * @param path Path where file to be removed is stored.
    */
-  static void RemoveFile(std::string path)
+  static int RemoveFile(std::string path)
   {
     std::remove(path.c_str());
     if (PathExists(path) != 0)
     {
       mlpack::Log::Warn << "Error Deleting File." << std::endl;
+      return 1;
     }
+    return 0;
   }
 };
 #endif
