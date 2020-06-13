@@ -27,27 +27,31 @@ using namespace ens;
 
 int main()
 {
-  DataLoader<> dataloader;
+  DataLoader<arma::mat, arma::mat> dataloader;
   std::cout << "Loading Dataset!" << std::endl;
   dataloader.LoadImageDatasetFromDirectory("./../data/cifar-test",
-      32, 32, 3, true, 0.2, true,
-      {"resize : 128"});
-
+      32, 32, 3, true, 0.2, true);
   std::cout << "Dataset Loaded!" << std::endl;
 
-  DarkNet<> darknetModel(3, 128, 128, 10);
+  DarkNet<> darknetModel(3, 32, 32, 10);
   std::cout << "Model Compiled" << std::endl;
 
   constexpr double RATIO = 0.1;
   constexpr size_t EPOCHS = 3;
   constexpr double STEP_SIZE = 1.2e-3;
-  constexpr int BATCH_SIZE = 50;
+  constexpr int BATCH_SIZE = 1;
 
   ens::Adam optimizer(STEP_SIZE, BATCH_SIZE, 0.9, 0.998, 1e-8,
       dataloader.TrainFeatures().n_cols * EPOCHS);
   std::cout << "Optimizer Created, Starting Training!" << std::endl;
 
-  darknetModel.GetModel().Train(dataloader.TrainFeatures(),
+  mlpack::data::MinMaxScaler scaler;
+  scaler.Fit(dataloader.TrainFeatures());
+  scaler.Transform(dataloader.TrainFeatures(), dataloader.TrainFeatures());
+
+  std::cout << "Model loaded!" << std::endl;
+  FFN <> model = darknetModel.GetModel();
+  model.Train(dataloader.TrainFeatures(),
       dataloader.TrainLabels(), optimizer, ens::PrintLoss(),
       ens::ProgressBar(), ens::EarlyStopAtMinLoss());
   mlpack::data::Save("darknet19.bin", "darknet",

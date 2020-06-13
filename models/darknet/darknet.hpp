@@ -185,7 +185,7 @@ class DarkNet
     inputWidth = PoolOutSize(inputWidth, kernelWidth, strideWidth);
     inputHeight = PoolOutSize(inputHeight, kernelHeight, strideHeight);
     std::cout << "(" << inputWidth << ", " << inputHeight <<
-        ")" << std::endl;;
+        ")" << std::endl;
     return bottleNeck;
   }
 

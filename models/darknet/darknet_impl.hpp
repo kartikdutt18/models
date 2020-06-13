@@ -91,7 +91,7 @@ DarkNet<OutputLayerType, InitializationRuleType, DarkNetVer>::DarkNet(
 
   if (DarkNetVer == 19)
   {
-    darkNet.Add(new IdentityLayer<>());
+    darkNet.Add<IdentityLayer<>>();
 
     // Convolution and activation function in a block.
     darkNet.Add(ConvolutionBlock(inputChannel, 32, 3,
@@ -114,13 +114,13 @@ DarkNet<OutputLayerType, InitializationRuleType, DarkNetVer>::DarkNet(
     darkNet.Add(ConvolutionBlock(512, 1024, 3, 3, 1, 1,
         1, 1));
     darkNet.Add(ConvolutionBlock(1024, 1000, 1, 1, 1, 1));
-    darkNet.Add(PoolingBlock(inputWidth, inputHeight,
-        inputWidth, inputHeight, "mean"));
+    darkNet.Add(PoolingBlock(inputWidth, inputHeight, inputWidth,
+        inputHeight, "mean"));
 
     if (includeTop)
     {
-      darkNet.Add(new Linear<>(1000, numClasses));
-      darkNet.Add(new LogSoftMax<>());
+      darkNet.Add<Linear<>>(16000, numClasses);
+      darkNet.Add<LogSoftMax<>>();
     }
 
     darkNet.ResetParameters();
