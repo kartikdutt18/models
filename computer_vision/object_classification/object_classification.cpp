@@ -30,10 +30,10 @@ int main()
   DataLoader<arma::mat, arma::mat> dataloader;
   std::cout << "Loading Dataset!" << std::endl;
   dataloader.LoadImageDatasetFromDirectory("./../data/cifar-test",
-      32, 32, 3, true, 0.2, true);
+      32, 32, 3, true, 0.2, true, {"resize : 64"});
   std::cout << "Dataset Loaded!" << std::endl;
 
-  DarkNet<> darknetModel(3, 32, 32, 10);
+  DarkNet<> darknetModel(3, 64, 64, 10);
   std::cout << "Model Compiled" << std::endl;
 
   constexpr double RATIO = 0.1;
@@ -49,9 +49,9 @@ int main()
   scaler.Fit(dataloader.TrainFeatures());
   scaler.Transform(dataloader.TrainFeatures(), dataloader.TrainFeatures());
 
+  dataloader.TrainLabels() = dataloader.TrainLabels() + 1;
   std::cout << "Model loaded!" << std::endl;
-  FFN <> model = darknetModel.GetModel();
-  model.Train(dataloader.TrainFeatures(),
+  darknetModel.GetModel().Train(dataloader.TrainFeatures(),
       dataloader.TrainLabels(), optimizer, ens::PrintLoss(),
       ens::ProgressBar(), ens::EarlyStopAtMinLoss());
   mlpack::data::Save("darknet19.bin", "darknet",
