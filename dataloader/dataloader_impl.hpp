@@ -346,7 +346,6 @@ template<
         }
       }
     }
-
     // Add object to training set.
     dataset.insert_cols(0, image);
     labels.push_front(boundingBoxes);
@@ -405,9 +404,15 @@ template<
     DatasetX image;
     mlpack::data::Load(imageName.string(), image, imageInfo);
 
+    std::cout << image.n_cols << " " << image.n_rows << std::endl;
+    std::cout << "Dataset : " << dataset.n_cols << " " << dataset.n_rows << std::endl;
+
     // Add object to training set.
-    dataset.insert_cols(0, image);
-    labels.insert_cols(0, arma::vec(1).fill(label));
+    if (image.n_rows == dataset.n_rows || dataset.n_elem == 0)
+    {
+      dataset.insert_cols(0, image);
+      labels.insert_cols(0, arma::vec(1).fill(label));
+    }
 
     loadedImages++;
     mlpack::Log::Info << "Loaded " << loadedImages << " out of " <<
@@ -485,6 +490,7 @@ template<
       validationData.n_rows - 1);
 
   augmentations.Transform(trainFeatures, imageWidth, imageHeight, imageDepth);
+  augmentations.Transform(validFeatures, imageWidth, imageHeight, imageDepth);
 
   mlpack::Log::Info << "Found " << totalClasses << " classes." << std::endl;
 
