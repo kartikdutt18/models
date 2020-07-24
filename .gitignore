@@ -12,6 +12,5 @@ data/*
 *.jpeg
 *.jpg
 *.png
-*.txt
 .travis/configs.hpp
 Testing/*
