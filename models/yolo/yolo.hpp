@@ -96,7 +96,7 @@ class YOLO
   YOLO(const std::tuple<size_t, size_t, size_t> inputShape,
        const size_t numClasses = 1000,
        const size_t numBoxes = 2,
-       const std::tuple<size_t, size_t> featureShape,
+       const std::tuple<size_t, size_t> featureShape = {7, 7},
        const std::string& weights = "none",
        const bool includeTop = true);
 

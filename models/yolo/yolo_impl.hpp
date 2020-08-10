@@ -133,6 +133,10 @@ YOLO<OutputLayerType, InitializationRuleType, YOLOVersion>::YOLO(
   }
     yolo.ResetParameters();
   }
+  else if (YOLOVersion == "v3-tiny")
+  {
+    
+  }
 }
 
 template<
