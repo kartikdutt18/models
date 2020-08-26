@@ -8,6 +8,10 @@ set(SOURCES
   object_classification.cpp
   weight_converter.cpp
   imagenette_trainer.cpp
+  imagenette_tester.cpp
+  test_network.cpp
+  test_network_53.cpp
+  yolo_test.cpp
 )
 
 foreach(file ${SOURCES})

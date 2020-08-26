@@ -1,30 +1,19 @@
 /**
- * @file darknet.hpp
+ * @file yolo.hpp
  * @author Kartik Dutt
- * 
- * Definition of Darknet models.
- * 
+ *
+ * Definition of Yolo models.
+ *
  * For more information, kindly refer to the following paper.
- * 
- * Paper for DarkNet-19.
+ *
+ * Paper for YOLOv1.
  *
  * @code
  * @article{Redmon2016,
- *  author = {Joseph Redmon, Ali Farhadi},
- *  title = {YOLO9000 : Better, Faster, Stronger},
+ *  author = {Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi},
+ *  title = {You Only Look Once : Unified, Real-Time Object Detection},
  *  year = {2016},
- *  url = {https://pjreddie.com/media/files/papers/YOLO9000.pdf}
- * }
- * @endcode
- * 
- * Paper for DarkNet-53.
- * 
- * @code
- * @article{Redmon2016,
- *  author = {Joseph Redmon, Ali Farhadi},
- *  title = {YOLOv3 :  An Incremental Improvement},
- *  year = {2019},
- *  url = {https://pjreddie.com/media/files/papers/YOLOv3.pdf}
+ *  url = {https://arxiv.org/pdf/1506.02640.pdf}
  * }
  * @endcode
  *
@@ -34,74 +23,87 @@
  * http://www.opensource.org/licenses/BSD-3-Clause for more information.
  */
 
-#ifndef MODELS_DARKNET_HPP
-#define MODELS_DARKNET_HPP
+#ifndef MODELS_YOLO_HPP
+#define MODELS_YOLO_HPP
 
 #include <mlpack/core.hpp>
 #include <mlpack/methods/ann/layer/layer.hpp>
 #include <mlpack/methods/ann/ffn.hpp>
 #include <mlpack/methods/ann/layer/layer_types.hpp>
 #include <mlpack/methods/ann/init_rules/random_init.hpp>
-#include <mlpack/methods/ann/init_rules/he_init.hpp>
-#include <mlpack/methods/ann/init_rules/glorot_init.hpp>
+
 
 namespace mlpack {
 namespace ann /** Artificial Neural Network. */{
 
 /**
- * Definition of a Darknet CNN.
+ * Definition of a YOLO object detection models.
  * 
  * @tparam OutputLayerType The output layer type used to evaluate the network.
  * @tparam InitializationRuleType Rule used to initialize the weight matrix.
- * @tparam DaknetVer Version of DarkNet.
+ * @tparam YOLOVersion Version of YOLO model.
  */
 template<
   typename OutputLayerType = NegativeLogLikelihood<>,
-  typename InitializationRuleType = RandomInitialization,
-  size_t DarkNetVersion = 19
+  typename InitializationRuleType = RandomInitialization
 >
-class DarkNet
+class YOLO
 {
  public:
-  //! Create the DarkNet model.
-  DarkNet();
+  //! Create the YOLO model.
+  YOLO();
 
   /**
-   * DarkNet constructor intializes input shape and number of classes.
+   * YOLO constructor intializes input shape and number of classes.
    *
    * @param inputChannels Number of input channels of the input image.
    * @param inputWidth Width of the input image.
    * @param inputHeight Height of the input image.
+   * @param yoloVersion Version of YOLO model.
    * @param numClasses Optional number of classes to classify images into,
    *                   only to be specified if includeTop is  true.
-   * @param weights One of 'none', 'cifar10'(pre-training on CIFAR10) or path to weights.
+   * @param numBoxes Number of bounding boxes per image.
+   * @param featureSizeWidth Width of output feature map.
+   * @param featureSizeHeight Height of output feature map.
+   * @param weights One of 'none', 'voc'(pre-training on VOC-2012) or path to weights.
    * @param includeTop Must be set to true if weights are set.
    */
-  DarkNet(const size_t inputChannel,
-          const size_t inputWidth,
-          const size_t inputHeight,
-          const size_t numClasses = 1000,
-          const std::string& weights = "none",
-          const bool includeTop = true);
+  YOLO(const size_t inputChannel,
+       const size_t inputWidth,
+       const size_t inputHeight,
+       const std::string yoloVersion = "v1-tiny",
+       const size_t numClasses = 20,
+       const size_t numBoxes = 2,
+       const size_t featureSizeWidth = 7,
+       const size_t featureSizeHeight = 7,
+       const std::string& weights = "none",
+       const bool includeTop = true);
 
   /**
-   * DarkNet constructor intializes input shape and number of classes.
+   * YOLO constructor intializes input shape and number of classes.
    *
    * @param inputShape A three-valued tuple indicating input shape.
    *                   First value is number of Channels (Channels-First).
    *                   Second value is input height.
-   *                   Third value is input width..
+   *                   Third value is input width.
+   * @param yoloVersion Version of YOLO model.
    * @param numClasses Optional number of classes to classify images into,
    *                   only to be specified if includeTop is  true.
+   * @param numBoxes Number of bounding boxes per image.
+   * @param featureShape A twp-valued tuple indicating width and height of output feature
+   *                    map.
    * @param weights One of 'none', 'cifar10'(pre-training on CIFAR10) or path to weights.
    */
-  DarkNet(const std::tuple<size_t, size_t, size_t> inputShape,
-          const size_t numClasses = 1000,
-          const std::string& weights = "none",
-          const bool includeTop = true);
+  YOLO(const std::tuple<size_t, size_t, size_t> inputShape,
+       const std::string yoloVersion = "v1-tiny",
+       const size_t numClasses = 1000,
+       const size_t numBoxes = 2,
+       const std::tuple<size_t, size_t> featureShape = {7, 7},
+       const std::string& weights = "none",
+       const bool includeTop = true);
 
   //! Get Layers of the model.
-  FFN<OutputLayerType, InitializationRuleType>& GetModel() { return darkNet; }
+  FFN<OutputLayerType, InitializationRuleType>& GetModel() { return yolo; }
 
   //! Load weights into the model.
   void LoadModel(const std::string& filePath);
@@ -127,7 +129,7 @@ class DarkNet
    * @param batchNorm Boolean to determine whether a batch normalization
    *                  layer is added.
    * @param baseLayer Layer in which Convolution block will be added, if
-   *                  NULL added to darkNet FFN.
+   *                  NULL added to YOLO FFN.
    */
   template<typename SequentialType = Sequential<>>
   void ConvolutionBlock(const size_t inSize,
@@ -138,7 +140,7 @@ class DarkNet
                         const size_t strideHeight = 1,
                         const size_t padW = 0,
                         const size_t padH = 0,
-                        const bool batchNorm = true,
+                        const bool batchNorm = false,
                         SequentialType* baseLayer = NULL)
   {
     Sequential<>* bottleNeck = new Sequential<>();
@@ -146,7 +148,6 @@ class DarkNet
         kernelHeight, strideWidth, strideHeight, padW, padH, inputWidth,
         inputHeight));
 
-    // Update inputWidth and input Height.
     std::cout << "Conv Layer.  ";
     std::cout << "(" << inputWidth << ", " << inputHeight <<
         ", " << inSize << ") ----> ";
@@ -161,16 +162,12 @@ class DarkNet
       bottleNeck->Add(new BatchNorm<>(outSize, 1e-5, false));
     }
 
-    bottleNeck->Add(new LeakyReLU<>(0.1));
+    bottleNeck->Add(new LeakyReLU<>(0.01));
 
     if (baseLayer != NULL)
-    {
       baseLayer->Add(bottleNeck);
-    }
     else
-    {
-      darkNet.Add(bottleNeck);
-    }
+      yolo.Add(bottleNeck);
   }
 
   /**
@@ -185,79 +182,23 @@ class DarkNet
   {
     if (type == "max")
     {
-      darkNet.Add(new MaxPooling<>(std::ceil(factor),
-          std::ceil(factor), factor, factor));
+      yolo.Add(new AdaptiveMaxPooling<>(std::ceil(inputWidth * 1.0 / factor),
+          std::ceil(inputHeight * 1.0 / factor)));
     }
     else
     {
-      darkNet.Add(new MeanPooling<>(std::ceil(
-          factor), std::ceil(factor), factor, factor));
+      yolo.Add(new AdaptiveMeanPooling<>(std::ceil(inputWidth * 1.0 /
+          factor), std::ceil(inputHeight * 1.0 / factor)));
     }
 
     std::cout << "Pooling Layer.  ";
     std::cout << "(" << inputWidth << ", " << inputHeight <<
         ") ----> ";
-
     // Update inputWidth and inputHeight.
     inputWidth = std::ceil(inputWidth * 1.0 / factor);
     inputHeight = std::ceil(inputHeight * 1.0 / factor);
-    std::cout << "(" << inputWidth << ", " << inputHeight <<
-        ")" << std::endl; 
-  }
 
-  /**
-   * Adds bottleneck block for DarkNet 19.
-   *
-   * It's represented as:
-   * ConvolutionLayer(inputChannel, inputChannel * 2, stride)
-   *           |
-   * ConvolutionLayer(inputChannel * 2, inputChannel, 1)
-   *           |
-   * ConvolutionLayer(inputChannel, inputChannel * 2, stride)
-   *
-   * @param inputChannel Input channel in the convolution block.
-   * @param kernelWidth Width of the filter/kernel.
-   * @param kernelHeight Height of the filter/kernel.
-   * @param padWidth Padding in convolutional layer.
-   * @param padHeight Padding in convolutional layer.
-   */
-  void DarkNet19SequentialBlock(const size_t inputChannel,
-                                const size_t kernelWidth,
-                                const size_t kernelHeight,
-                                const size_t padWidth,
-                                const size_t padHeight)
-  {
-    ConvolutionBlock(inputChannel, inputChannel * 2,
-        kernelWidth, kernelHeight, 1, 1, padWidth, padHeight, true);
-    ConvolutionBlock(inputChannel * 2, inputChannel,
-        1, 1, 1, 1, 0, 0, true);
-    ConvolutionBlock(inputChannel, inputChannel * 2,
-        kernelWidth, kernelHeight, 1, 1, padWidth, padHeight, true);
-  }
-
-  /**
-   * Adds residual bottleneck block for DarkNet 53.
-   *
-   * @param inputChannel Input channel in the bottle-neck.
-   * @param kernelWidth Width of the filter/kernel.
-   * @param kernelHeight Height of the filter/kernel.
-   * @param padWidth Padding in convolutional layer.
-   * @param padHeight Padding in convolutional layer.
-   */
-  void DarkNet53ResidualBlock(const size_t inputChannel,
-                              const size_t kernelWidth = 3,
-                              const size_t kernelHeight = 3,
-                              const size_t padWidth = 1,
-                              const size_t padHeight = 1)
-  {
-    std::cout << "Residual Block Begin." << std::endl;
-    Residual<>* residualBlock = new Residual<>();
-    ConvolutionBlock(inputChannel, inputChannel / 2,
-        1, 1, 1, 1, 0, 0, true, residualBlock);
-    ConvolutionBlock(inputChannel / 2, inputChannel, kernelWidth,
-        kernelHeight, 1, 1, padWidth, padWidth, true, residualBlock);
-    darkNet.Add(residualBlock);
-    std::cout << "Residual Block end." << std::endl;
+    std::cout << "(" << inputWidth << ", " << inputHeight << ")" << std::endl;
   }
 
   /**
@@ -277,8 +218,8 @@ class DarkNet
     return std::floor(size + 2 * padding - k) / s + 1;
   }
 
-  //! Locally stored LeNet Model.
-  FFN<OutputLayerType, InitializationRuleType> darkNet;
+  //! Locally stored YOLO Model.
+  FFN<OutputLayerType, InitializationRuleType> yolo;
 
   //! Locally stored width of the image.
   size_t inputWidth;
@@ -292,13 +233,25 @@ class DarkNet
   //! Locally stored number of output classes.
   size_t numClasses;
 
+  //! Locally stored number of output bounding boxes.
+  size_t numBoxes;
+
+  //! Locally stored width of output feature map.
+  size_t featureWidth;
+
+  //! Locally stored height of output feature map.
+  size_t featureHeight;
+
   //! Locally stored type of pre-trained weights.
   std::string weights;
-}; // DarkNet class.
+
+  //! Locally stored version of yolo model.
+  std::string yoloVersion;
+}; // YOLO class.
 
 } // namespace ann
 } // namespace mlpack
 
-# include "darknet_impl.hpp"
+# include "yolo_impl.hpp"
 
 #endif

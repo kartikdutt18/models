@@ -127,7 +127,6 @@ void LoadBNMats(arma::mat& runningMean, arma::mat& runningVar)
   runningMean.clear();
   if (!batchNormRunningMean.empty())
   {
-    cout << batchNormRunningMean.front() << endl;
     mlpack::data::Load(batchNormRunningMean.front(), runningMean);
     batchNormRunningMean.pop();
   }
@@ -150,58 +149,22 @@ template <
 >void HardCodedRunningMeanAndVariance(
     mlpack::ann::FFN<OutputLayer, InitializationRule> &model)
 {
-  arma::mat runningMean, runningVar;
-  vector<size_t> indices ={ 1, 2 };
-  for (size_t idx : indices)
-  {
-      LoadBNMats(runningMean, runningVar);
-      std::cout << "Loading RunningMean and Variance for " << idx << std::endl;
-      boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->TrainingMean() = runningMean.t();
-      boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->TrainingVariance() = runningVar.t();
-      boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->Deterministic() = true;
-
-  }
-
-  vector<size_t> darknet53Cfg ={ 1, 2, 8, 8, 4 };
-  size_t cnt = 3;
-  for (size_t blockCnt : darknet53Cfg)
-  {
-      for (size_t layer = 0; layer < blockCnt; layer++)
-      {
-          std::cout << "Loading RunningMean and Variance for " << cnt << std::endl;
-          LoadBNMats(runningMean, runningVar);
-
-          std::cout << boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(boost::get<Residual<>*>(model.Model()[cnt])->Model()[0])->Model()[1])->InputSize() << " ---- " << runningMean.n_elem << std::endl;;
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(boost::get<Residual<>*>(model.Model()[cnt])->Model()[0])->Model()[1])->TrainingMean() = runningMean.t();
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(boost::get<Residual<>*>(model.Model()[cnt])->Model()[0])->Model()[1])->TrainingVariance() = runningVar.t();
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(boost::get<Residual<>*>(model.Model()[cnt])->Model()[0])->Model()[1])->Deterministic() = true;
-          std::cout << "Loading RunningMean and Variance for " << cnt << std::endl;
-          LoadBNMats(runningMean, runningVar);
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(boost::get<Residual<>*>(model.Model()[cnt])->Model()[1])->Model()[1])->TrainingMean() = runningMean.t();
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(boost::get<Residual<>*>(model.Model()[cnt])->Model()[1])->Model()[1])->TrainingVariance() = runningVar.t();
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(boost::get<Residual<>*>(model.Model()[cnt])->Model()[1])->Model()[1])->Deterministic() = true;
-          cnt++;
+    arma::mat runningMean, runningVar;
+    vector<size_t> indices ={ 1, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23 };
+    for (size_t idx : indices)
+    {
+        LoadBNMats(runningMean, runningVar);
+        std::cout << "Loading RunningMean and Variance for " << idx << std::endl;
+        boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->TrainingMean() = runningMean.t();
+        boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->TrainingVariance() = runningVar.t();
       }
-
-      if (blockCnt != 4)
-      {
-          std::cout << "Loading RunningMean and Variance for " << cnt << std::endl;
-          LoadBNMats(runningMean, runningVar);
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[cnt])->Model()[1])->TrainingMean() = runningMean.t();
-          boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[cnt])->Model()[1])->TrainingVariance() = runningVar.t();
-          cnt++;
-      }
-  }
-
-  cout << batchNormRunningMean.size() << endl;
 }
 
 
 int main()
 {
-    DarkNet<mlpack::ann::CrossEntropyError<>,
-        mlpack::ann::RandomInitialization, 53> darknet(3, 224, 224, 1000);
-  LoadWeights<mlpack::ann::CrossEntropyError<>>(darknet.GetModel(), "./../../../cfg/darknet53.xml");
+  DarkNet<mlpack::ann::CrossEntropyError<>> darknet(3, 224, 224, 1000);
+  LoadWeights<mlpack::ann::CrossEntropyError<>>(darknet.GetModel(), "./../../../cfg/darknet19.xml");
   HardCodedRunningMeanAndVariance<mlpack::ann::CrossEntropyError<>>(darknet.GetModel());
 
   arma::mat input(224 * 224 * 3, 1), output;
@@ -211,18 +174,17 @@ int main()
   double sum = arma::accu(output);
   std::cout << std::setprecision(10) << sum << " --> " << output.col(0).index_max() << std::endl;
 
-  cout << mlpack::data::Save("../darknet53_imagenet.bin", "DarkNet", darknet.GetModel(), true) << endl;;
-
-  FFN<CrossEntropyError<>> model;
-  cout << mlpack::data::Load("../darknet53_imagenet.bin", "DarkNet", model, true) << endl;
   input.clear();
-  cout << mlpack::data::Load("./../../../../imagenette_image.csv", input, true) << endl;;
-  std::cout << input.n_cols << std::endl;
+ 
+  mlpack::data::Load("./../../../../imagenette_image.csv", input);
   if (input.n_cols > 80)
   {
       input = input.t();
       cout << "New cols : " << input.n_cols << std::endl;
-  }
+  } 
+
+  std::cout << input.n_cols << std::endl;
+
 
   for (int i = 0; i < input.n_cols; i++)
   {
@@ -230,10 +192,10 @@ int main()
       darknet.GetModel().Predict(input.col(i), output);
       sum = arma::accu(output);
       std::cout << std::setprecision(10) << sum << " --> " << output.col(0).index_max() <<
-          "  " << output.col(0).max() << std::endl;
-      break;
+          "  " << output.col(0).max() << " ---> " << arma::accu(input.col(i)) << std::endl;
   }
 
-
+  mlpack::data::Save("../darknet19_imagenet.bin", "darknet",
+      darknet.GetModel(), false);
   return 0;
 }

@@ -1,20 +1,3 @@
-/**
- * @file imagenette_trainer.hpp
- * @author Kartik Dutt
- *
- * Contains implementation of object classification suite. It can be used
- * to select object classification model, it's parameter dataset and
- * other training parameters.
- *
- * NOTE: This code needs to be adapted as this implementation doesn't support
- *       Command Line Arguments.
- *
- * mlpack is free software; you may redistribute it and/or modify it under the
- * terms of the 3-clause BSD license.  You should have received a copy of the
- * 3-clause BSD license along with mlpack.  If not, see
- * http://www.opensource.org/licenses/BSD-3-Clause for more information.
- */
-
 #include <mlpack/core.hpp>
 #include <dataloader/dataloader.hpp>
 #include <models/models.hpp>
@@ -31,6 +14,7 @@
 #include <ensmallen_utils/print_metric.hpp>
 #include <ensmallen_utils/periodic_save.hpp>
 #include <ensmallen.hpp>
+#include <mlpack/core/data/scaler_methods/standard_scaler.hpp>
 #include <mlpack/methods/ann/loss_functions/cross_entropy_error.hpp>
 
 using namespace mlpack;
@@ -41,27 +25,15 @@ using namespace ens;
 
 std::queue<std::string> batchNormRunningMean;
 std::queue<std::string> batchNormRunningVar;
+FFN<CrossEntropyError<>> model;
 
-class Accuracy
-{
- public:
-  template<typename InputType, typename OutputType>
-  static double Evaluate(InputType& input, OutputType& output)
-  {
-    arma::Row<size_t> predLabels(input.n_cols);
-    for (arma::uword i = 0; i < input.n_cols; ++i)
-    {
-      predLabels(i) = input.col(i).index_max() + 1;
-    }
-    return arma::accu(predLabels == output) / (double)output.n_elem * 100;
-  }
-};
-
+size_t inputWidth = 224;
+size_t inputHeight = 224;
 
 template <
-    typename OutputLayer = mlpack::ann::NegativeLogLikelihood<>,
+    typename OutputLayer = mlpack::ann::CrossEntropyError<>,
     typename InitializationRule = mlpack::ann::RandomInitialization>
-void LoadWeights(mlpack::ann::FFN<OutputLayer, InitializationRule> &model,
+void LoadWeights(mlpack::ann::FFN<OutputLayer, InitializationRule>& model,
                  std::string modelConfigPath)
 {
   std::cout << "Loading Weights\n";
@@ -122,12 +94,11 @@ void LoadWeights(mlpack::ann::FFN<OutputLayer, InitializationRule> &model,
   std::cout << "Loaded Weights\n";
 }
 
-void LoadBNMats(arma::mat& runningMean, arma::mat& runningVar)
+void LoadBNMats(arma::mat &runningMean, arma::mat &runningVar)
 {
   runningMean.clear();
   if (!batchNormRunningMean.empty())
   {
-    cout << batchNormRunningMean.front() << endl;
     mlpack::data::Load(batchNormRunningMean.front(), runningMean);
     batchNormRunningMean.pop();
   }
@@ -151,18 +122,19 @@ template <
     mlpack::ann::FFN<OutputLayer, InitializationRule> &model)
 {
   arma::mat runningMean, runningVar;
-  vector<size_t> indices ={ 1, 2 };
+  // vector<size_t> indices ={ 1, 2 };
+  vector<size_t> indices ={1, 2};
   for (size_t idx : indices)
   {
       LoadBNMats(runningMean, runningVar);
       std::cout << "Loading RunningMean and Variance for " << idx << std::endl;
       boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->TrainingMean() = runningMean.t();
       boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->TrainingVariance() = runningVar.t();
-      boost::get<BatchNorm<>*>(boost::get<Sequential<>*>(model.Model()[idx])->Model()[1])->Deterministic() = true;
-
   }
 
-  vector<size_t> darknet53Cfg ={ 1, 2, 8, 8, 4 };
+  // vector<size_t> darknet53Cfg ={ 1, 2, 8, 8, 4 };
+  vector<size_t> darknet53Cfg ={1, 2, 8, 8, 4};
+
   size_t cnt = 3;
   for (size_t blockCnt : darknet53Cfg)
   {
@@ -196,44 +168,127 @@ template <
   cout << batchNormRunningMean.size() << endl;
 }
 
+size_t ConvOutSize(const size_t size,
+    const size_t k,
+    const size_t s,
+    const size_t padding)
+{
+    return std::floor(size + 2 * padding - k) / s + 1;
+}
+
+template<typename SequentialType = Sequential<>>
+void ConvolutionBlock(const size_t inSize,
+    const size_t outSize,
+    const size_t kernelWidth,
+    const size_t kernelHeight,
+    const size_t strideWidth = 1,
+    const size_t strideHeight = 1,
+    const size_t padW = 0,
+    const size_t padH = 0,
+    const bool batchNorm = true,
+    SequentialType* baseLayer = NULL)
+{
+    Sequential<>* bottleNeck = new Sequential<>();
+    bottleNeck->Add(new Convolution<>(inSize, outSize, kernelWidth,
+        kernelHeight, strideWidth, strideHeight, padW, padH, inputWidth,
+        inputHeight));
+
+    // Update inputWidth and input Height.
+    std::cout << "Conv Layer.  ";
+    std::cout << "(" << inputWidth << ", " << inputHeight <<
+        ", " << inSize << ") ----> ";
+
+    inputWidth = ConvOutSize(inputWidth, kernelWidth, strideWidth, padW);
+    inputHeight = ConvOutSize(inputHeight, kernelHeight, strideHeight, padH);
+    std::cout << "(" << inputWidth << ", " << inputHeight <<
+        ", " << outSize << ")" << std::endl;
+
+    if (batchNorm)
+    {
+        bottleNeck->Add(new BatchNorm<>(outSize, 1e-5, false));
+    }
+
+    bottleNeck->Add(new LeakyReLU<>(0.01));
+
+    if (baseLayer != NULL)
+    {
+        baseLayer->Add(bottleNeck);
+    }
+    else
+    {
+        model.Add(bottleNeck);
+    }
+}
+
+void DarkNet53ResidualBlock(const size_t inputChannel,
+    const size_t kernelWidth = 3,
+    const size_t kernelHeight = 3,
+    const size_t padWidth = 1,
+    const size_t padHeight = 1)
+{
+    std::cout << "Residual Block Begin." << std::endl;
+    Residual<>* residualBlock = new Residual<>();
+    ConvolutionBlock(inputChannel, inputChannel / 2,
+        1, 1, 1, 1, 0, 0, true, residualBlock);
+    ConvolutionBlock(inputChannel / 2, inputChannel, kernelWidth,
+        kernelHeight, 1, 1, padWidth, padWidth, true, residualBlock);
+    model.Add(residualBlock);
+    std::cout << "Residual Block end." << std::endl;
+}
+
 
 int main()
 {
-    DarkNet<mlpack::ann::CrossEntropyError<>,
-        mlpack::ann::RandomInitialization, 53> darknet(3, 224, 224, 1000);
-  LoadWeights<mlpack::ann::CrossEntropyError<>>(darknet.GetModel(), "./../../../cfg/darknet53.xml");
-  HardCodedRunningMeanAndVariance<mlpack::ann::CrossEntropyError<>>(darknet.GetModel());
-
   arma::mat input(224 * 224 * 3, 1), output;
-  input.fill(1.0);
+  input.ones();
 
-  darknet.GetModel().Predict(input, output);
-  double sum = arma::accu(output);
-  std::cout << std::setprecision(10) << sum << " --> " << output.col(0).index_max() << std::endl;
+  model.Add<IdentityLayer<>>();
+  ConvolutionBlock(3, 32, 3, 3, 1, 1, 1, 1, true);
+  ConvolutionBlock(32, 64, 3, 3, 2, 2, 1, 1, true);
 
-  cout << mlpack::data::Save("../darknet53_imagenet.bin", "DarkNet", darknet.GetModel(), true) << endl;;
+  size_t curChannels = 64;
 
-  FFN<CrossEntropyError<>> model;
-  cout << mlpack::data::Load("../darknet53_imagenet.bin", "DarkNet", model, true) << endl;
-  input.clear();
-  cout << mlpack::data::Load("./../../../../imagenette_image.csv", input, true) << endl;;
-  std::cout << input.n_cols << std::endl;
-  if (input.n_cols > 80)
+  // Residual block configuration for DarkNet 53.
+  std::vector<size_t> residualBlockConfig ={1, 2, 8, 8, 4};
+  for (size_t blockCount : residualBlockConfig)
   {
-      input = input.t();
-      cout << "New cols : " << input.n_cols << std::endl;
+      for (size_t i = 0; i < blockCount; i++)
+      {
+          DarkNet53ResidualBlock(curChannels);
+      }
+
+      if (blockCount != 4)
+      {
+          ConvolutionBlock(curChannels, curChannels * 2, 3, 3,
+              2, 2, 1, 1, true);
+          curChannels = curChannels * 2;
+      }
   }
 
-  for (int i = 0; i < input.n_cols; i++)
+  model.Add<AdaptiveMeanPooling<>>(1, 1);
+  model.Add<Linear<>>(1024, 1000);
+
+  model.ResetParameters();
+  model.Parameters().zeros();
+
+  LoadWeights(model, "./../../../cfg/darknet53_features.xml");
+  HardCodedRunningMeanAndVariance(model);
+
+  model.Predict(input, output);
+  arma::mat desiredOutput;
+  mlpack::data::Load("./../../.././models/darknet53/mlpack-weights/linear_weight_158.csv", desiredOutput);
+  output = model.Parameters().submat(arma::span(model.Parameters().n_elem - 1000 - 1024 * 1000,
+      model.Parameters().n_elem - 1000 - 1), arma::span());
+  /*
+   * mlpack::data::Load("avg_pool_output.csv", desiredOutput);
+  */
+  for (int i = 0; i < output.n_elem; i++)
   {
-      output.clear();
-      darknet.GetModel().Predict(input.col(i), output);
-      sum = arma::accu(output);
-      std::cout << std::setprecision(10) << sum << " --> " << output.col(0).index_max() <<
-          "  " << output.col(0).max() << std::endl;
-      break;
+    double diff = abs(output(i) - desiredOutput(i));
+    if (diff != 0)
+      cout << diff << " " << i << endl;
+    if (i % 10 == 0)
+      cout << "Checkpoint : " << i << endl;
   }
-
-
   return 0;
 }
