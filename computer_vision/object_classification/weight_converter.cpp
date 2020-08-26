@@ -39,7 +39,7 @@ int main()
   arma::mat input, labels, output;
   DataLoader<> dataloader;
   dataloader.LoadAllImagesFromDirectory("./../../../../imagenette_new/n01440764/", input, labels, 224, 224, 3, 448);
-  PreProcessor<>::ChannelFirstImages(input, 224, 224, 3);
+
   FFN<mlpack::ann::CrossEntropyError<>> model;
   mlpack::data::Load("../darknet19_imagenet.bin", "DarkNet", model);
   mlpack::data::Load("./../../../../imagenette_image.csv", input);
